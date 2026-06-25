@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="HexScan — Identify any file by its magic bytes and headers. Supports 120+ file formats across images, documents, executables, forensic artifacts, and more." />
+  <title>HexScan — File Signature Analyzer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0f1e'/><text x='4' y='24' font-size='20' font-family='monospace' fill='%2300ffd5'>⬡</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <span class="nav-logo">⬡ HexScan</span>
+      <div class="nav-links">
+        <a href="#signatures">Signatures</a>
+        <a href="#about">About</a>
+        <a href="https://github.com" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hex-grid" aria-hidden="true" id="hexGrid"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Magic Bytes · File Signatures · Header Analysis</p>
+      <h1 class="hero-title">Identify any file<br/><span class="hero-accent">by its first bytes.</span></h1>
+      <p class="hero-sub">Drop a file or paste hex — HexScan reads the raw signature and tells you exactly what it is. 120+ formats. No upload. All local.</p>
+      <div class="stat-row">
+        <div class="stat"><span class="stat-n" id="countFormats">120+</span><span class="stat-l">formats</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-n">11</span><span class="stat-l">categories</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-n">0</span><span class="stat-l">bytes sent</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- DROP ZONE -->
+  <main class="main">
+    <section class="analyzer-section">
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Drop a file or click to select">
+        <div class="drop-inner">
+          <div class="drop-icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="8" y="6" width="32" height="36" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <path d="M16 18h16M16 24h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M30 32l4-4 4 4M34 28v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="drop-label">Drop any file here</p>
+          <p class="drop-sub">or <button class="drop-browse" id="browseBtn">browse files</button></p>
+          <input type="file" id="fileInput" class="sr-only" aria-label="Select file" />
+        </div>
+      </div>
+
+      <!-- HEX INPUT -->
+      <div class="hex-input-wrap">
+        <label for="hexInput" class="hex-label">Or paste hex bytes manually</label>
+        <div class="hex-input-row">
+          <input type="text" id="hexInput" class="hex-input" placeholder="FF D8 FF E0  or  ffd8ffe0  or  \\xFF\\xD8" spellcheck="false" autocomplete="off" />
+          <button class="btn-analyze" id="analyzeBtn">Analyze</button>
+        </div>
+        <p class="hex-hint">Separate bytes with spaces, no separator, or \\x notation. Case-insensitive.</p>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="result-section" id="resultSection" hidden>
+      <div class="result-card" id="resultCard">
+        <div class="result-header">
+          <div class="result-badge" id="resultCategory"></div>
+          <span class="result-format" id="resultFormat"></span>
+        </div>
+        <h2 class="result-name" id="resultName"></h2>
+        <p class="result-desc" id="resultDesc"></p>
+        <div class="result-meta" id="resultMeta"></div>
+        <div class="result-hex-display">
+          <span class="result-hex-label">Matched bytes</span>
+          <code class="result-hex-bytes" id="resultMatchedHex"></code>
+        </div>
+        <div class="result-raw-wrap">
+          <span class="result-hex-label">File header (first 32 bytes)</span>
+          <div class="hex-dump" id="hexDump"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NO MATCH -->
+    <section class="no-match-section" id="noMatchSection" hidden>
+      <div class="no-match-card">
+        <span class="no-match-icon">?</span>
+        <h2>Unknown signature</h2>
+        <p>No match found in the signature database. The file may be plain text, a proprietary format, or corrupted.</p>
+        <code class="no-match-hex" id="noMatchHex"></code>
+      </div>
+    </section>
+
+    <!-- SIGNATURE TABLE -->
+    <section class="sig-section" id="signatures">
+      <div class="sig-header">
+        <h2 class="sig-title">Signature Database</h2>
+        <div class="sig-controls">
+          <input type="search" id="sigSearch" class="sig-search" placeholder="Filter by name, extension, hex…" />
+          <div class="cat-filters" id="catFilters"></div>
+        </div>
+      </div>
+      <div class="sig-table-wrap">
+        <table class="sig-table" id="sigTable">
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Extension(s)</th>
+              <th>Category</th>
+              <th>Magic Bytes</th>
+              <th>Offset</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="sigTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about-section" id="about">
+      <div class="about-grid">
+        <div class="about-block">
+          <h3>How it works</h3>
+          <p>Files are read locally using the <code>FileReader</code> API — nothing leaves your machine. The first 32–512 bytes are extracted and compared against a prioritized signature table. Signatures with offsets (e.g. ZIP-based formats) are checked at their correct byte position.</p>
+        </div>
+        <div class="about-block">
+          <h3>Extending the database</h3>
+          <p>All signatures live in <code>signatures.js</code> as a plain JavaScript array. Each entry follows a simple schema: <code>{ name, ext, category, magic, offset, desc, mime }</code>. Add your own entries and the analyzer picks them up immediately.</p>
+        </div>
+        <div class="about-block">
+          <h3>Limitations</h3>
+          <p>Magic bytes identify <em>format</em>, not content. A JPEG is a JPEG regardless of what the image shows. Some formats share headers (e.g. DOCX and EPUB are both ZIP). HexScan resolves these with secondary signature checks at known offsets.</p>
+        </div>
+        <div class="about-block">
+          <h3>Deploy to GitHub Pages</h3>
+          <p>Push the three files (<code>index.html</code>, <code>style.css</code>, <code>signatures.js</code>) to a repository and enable GitHub Pages from Settings → Pages → Deploy from branch. No build step required.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>HexScan — static, local, open.</span>
+    <span>Built with ♥ for analysts, investigators &amp; curious minds.</span>
+  </footer>
+
+  <script src="signatures.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
