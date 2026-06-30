@@ -56,8 +56,20 @@
     return lb - la;
   });
 
-  // Update counter
-  if (countFormats) countFormats.textContent = SIGS.length + '+';
+  // ── Animated count-up ─────────────────────────────────────────
+  function animateCount(el, target, suffix) {
+    const duration = 1400;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(eased * target) + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  if (countFormats) animateCount(countFormats, SIGS.length, '+');
 
   // ── Hex background grid ───────────────────────────────────────
   function buildHexGrid() {
@@ -86,8 +98,21 @@
         }
         hex.setAttribute('points', pts.join(' '));
         hex.setAttribute('fill', 'none');
-        hex.setAttribute('stroke', '#00ffd5');
+        hex.setAttribute('stroke', '#4b9fff');
         hex.setAttribute('stroke-width', '0.5');
+        hex.setAttribute('stroke-opacity', '0.06');
+
+        // Randomly animate ~25% of cells with staggered glow pulses
+        if (Math.random() < 0.25) {
+          const dur  = (4 + Math.random() * 7).toFixed(2);
+          const delay = -(Math.random() * 12).toFixed(2);
+          hex.style.animationName           = 'hexGlow';
+          hex.style.animationDuration       = `${dur}s`;
+          hex.style.animationDelay          = `${delay}s`;
+          hex.style.animationTimingFunction = 'ease-in-out';
+          hex.style.animationIterationCount = 'infinite';
+        }
+
         svg.appendChild(hex);
       }
     }

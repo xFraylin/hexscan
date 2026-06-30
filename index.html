@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="HexScan — Identify any file by its magic bytes and headers. Supports 120+ file formats across images, documents, executables, forensic artifacts, and more." />
-  <title>HexScan — File Signature Analyzer</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0f1e'/><text x='4' y='24' font-size='20' font-family='monospace' fill='%2300ffd5'>⬡</text></svg>" />
+  <meta name="description" content="Sube cualquier archivo o pega bytes hex — HexScan lee la firma mágica en crudo y te dice exactamente qué es. Más de 130 formatos reales, 100% offline. Nada sale de tu navegador." />
+  <title>HexScan — Analizador de Firmas de Archivo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23070c1a'/><text x='4' y='24' font-size='20' font-family='monospace' fill='%234b9fff'>⬡</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -18,9 +18,9 @@
     <div class="nav-inner">
       <span class="nav-logo">⬡ HexScan</span>
       <div class="nav-links">
-        <a href="#signatures">Signatures</a>
-        <a href="#about">About</a>
-        <a href="https://github.com" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a>
+        <a href="#signatures">Firmas</a>
+        <a href="#about">Acerca de</a>
+        <a href="https://github.com/xfraylin" target="_blank" rel="noopener" class="nav-cta">GitHub ↗</a>
       </div>
     </div>
   </nav>
@@ -29,15 +29,15 @@
   <header class="hero">
     <div class="hex-grid" aria-hidden="true" id="hexGrid"></div>
     <div class="hero-content">
-      <p class="hero-eyebrow">Magic Bytes · File Signatures · Header Analysis</p>
-      <h1 class="hero-title">Identify any file<br/><span class="hero-accent">by its first bytes.</span></h1>
-      <p class="hero-sub">Drop a file or paste hex — HexScan reads the raw signature and tells you exactly what it is. 120+ formats. No upload. All local.</p>
+      <p class="hero-eyebrow">Magic Bytes · Firmas de Archivo · Análisis de Cabeceras</p>
+      <h1 class="hero-title">Identifica cualquier archivo<br/><span class="hero-accent">por sus primeros bytes.</span></h1>
+      <p class="hero-sub">Sube cualquier archivo o pega bytes hex — HexScan lee la firma mágica en crudo y te dice exactamente qué tienes entre manos. Sin servidor, sin uploads, sin rastreo. Todo corre aquí mismo, en tu navegador.</p>
       <div class="stat-row">
-        <div class="stat"><span class="stat-n" id="countFormats">120+</span><span class="stat-l">formats</span></div>
+        <div class="stat"><span class="stat-n" id="countFormats">130+</span><span class="stat-l">formatos</span></div>
         <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-n">11</span><span class="stat-l">categories</span></div>
+        <div class="stat"><span class="stat-n">12</span><span class="stat-l">categorías</span></div>
         <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-n">0</span><span class="stat-l">bytes sent</span></div>
+        <div class="stat"><span class="stat-n">0</span><span class="stat-l">bytes enviados</span></div>
       </div>
     </div>
   </header>
@@ -45,7 +45,7 @@
   <!-- DROP ZONE -->
   <main class="main">
     <section class="analyzer-section">
-      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Drop a file or click to select">
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Suelta un archivo o haz clic para seleccionar">
         <div class="drop-inner">
           <div class="drop-icon" aria-hidden="true">
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -54,20 +54,20 @@
               <path d="M30 32l4-4 4 4M34 28v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <p class="drop-label">Drop any file here</p>
-          <p class="drop-sub">or <button class="drop-browse" id="browseBtn">browse files</button></p>
-          <input type="file" id="fileInput" class="sr-only" aria-label="Select file" />
+          <p class="drop-label">Suelta cualquier archivo aquí</p>
+          <p class="drop-sub">o <button class="drop-browse" id="browseBtn">selecciona un archivo</button></p>
+          <input type="file" id="fileInput" class="sr-only" aria-label="Seleccionar archivo" />
         </div>
       </div>
 
       <!-- HEX INPUT -->
       <div class="hex-input-wrap">
-        <label for="hexInput" class="hex-label">Or paste hex bytes manually</label>
+        <label for="hexInput" class="hex-label">O pega bytes hex manualmente</label>
         <div class="hex-input-row">
-          <input type="text" id="hexInput" class="hex-input" placeholder="FF D8 FF E0  or  ffd8ffe0  or  \\xFF\\xD8" spellcheck="false" autocomplete="off" />
-          <button class="btn-analyze" id="analyzeBtn">Analyze</button>
+          <input type="text" id="hexInput" class="hex-input" placeholder="FF D8 FF E0  ó  ffd8ffe0  ó  \xFF\xD8" spellcheck="false" autocomplete="off" />
+          <button class="btn-analyze" id="analyzeBtn">Analizar</button>
         </div>
-        <p class="hex-hint">Separate bytes with spaces, no separator, or \\x notation. Case-insensitive.</p>
+        <p class="hex-hint">Separa bytes con espacios, sin separador o notación \x. No diferencia mayúsculas.</p>
       </div>
     </section>
 
@@ -82,11 +82,11 @@
         <p class="result-desc" id="resultDesc"></p>
         <div class="result-meta" id="resultMeta"></div>
         <div class="result-hex-display">
-          <span class="result-hex-label">Matched bytes</span>
+          <span class="result-hex-label">Bytes coincidentes</span>
           <code class="result-hex-bytes" id="resultMatchedHex"></code>
         </div>
         <div class="result-raw-wrap">
-          <span class="result-hex-label">File header (first 32 bytes)</span>
+          <span class="result-hex-label">Cabecera del archivo (primeros 32 bytes)</span>
           <div class="hex-dump" id="hexDump"></div>
         </div>
       </div>
@@ -96,8 +96,8 @@
     <section class="no-match-section" id="noMatchSection" hidden>
       <div class="no-match-card">
         <span class="no-match-icon">?</span>
-        <h2>Unknown signature</h2>
-        <p>No match found in the signature database. The file may be plain text, a proprietary format, or corrupted.</p>
+        <h2>Firma desconocida</h2>
+        <p>No se encontró coincidencia en la base de firmas. El archivo puede ser texto plano, un formato propietario o podría estar corrupto.</p>
         <code class="no-match-hex" id="noMatchHex"></code>
       </div>
     </section>
@@ -105,9 +105,9 @@
     <!-- SIGNATURE TABLE -->
     <section class="sig-section" id="signatures">
       <div class="sig-header">
-        <h2 class="sig-title">Signature Database</h2>
+        <h2 class="sig-title">Base de Firmas</h2>
         <div class="sig-controls">
-          <input type="search" id="sigSearch" class="sig-search" placeholder="Filter by name, extension, hex…" />
+          <input type="search" id="sigSearch" class="sig-search" placeholder="Buscar por nombre, extensión, hex…" />
           <div class="cat-filters" id="catFilters"></div>
         </div>
       </div>
@@ -115,12 +115,12 @@
         <table class="sig-table" id="sigTable">
           <thead>
             <tr>
-              <th>Format</th>
-              <th>Extension(s)</th>
-              <th>Category</th>
+              <th>Formato</th>
+              <th>Extensión(es)</th>
+              <th>Categoría</th>
               <th>Magic Bytes</th>
               <th>Offset</th>
-              <th>Description</th>
+              <th>Descripción</th>
             </tr>
           </thead>
           <tbody id="sigTableBody"></tbody>
@@ -132,28 +132,38 @@
     <section class="about-section" id="about">
       <div class="about-grid">
         <div class="about-block">
-          <h3>How it works</h3>
-          <p>Files are read locally using the <code>FileReader</code> API — nothing leaves your machine. The first 32–512 bytes are extracted and compared against a prioritized signature table. Signatures with offsets (e.g. ZIP-based formats) are checked at their correct byte position.</p>
+          <h3>Cómo funciona</h3>
+          <p>Cuando subes un archivo, la API <code>FileReader</code> lee los primeros 512 bytes directamente en tu navegador — nada se envía a ningún servidor. Esos bytes se comparan con cada entrada de la base de firmas, priorizando las coincidencias más largas. Las firmas con offsets específicos (como <code>mimetype</code> de EPUB en el byte 30) se verifican exactamente en la posición correcta.</p>
         </div>
         <div class="about-block">
-          <h3>Extending the database</h3>
-          <p>All signatures live in <code>signatures.js</code> as a plain JavaScript array. Each entry follows a simple schema: <code>{ name, ext, category, magic, offset, desc, mime }</code>. Add your own entries and the analyzer picks them up immediately.</p>
+          <h3>¿Qué son los magic bytes?</h3>
+          <p>La mayoría de los formatos de archivo tienen una secuencia de bytes fija en un offset conocido — llamada <em>número mágico</em> o firma de archivo. <code>MZ</code> abre todo ejecutable de Windows. <code>PK</code> inicia cualquier ZIP. <code>fLaC</code> comienza cada FLAC. Estos marcadores permiten identificar archivos sin importar su extensión, incluso cuando el nombre fue cambiado o borrado.</p>
         </div>
         <div class="about-block">
-          <h3>Limitations</h3>
-          <p>Magic bytes identify <em>format</em>, not content. A JPEG is a JPEG regardless of what the image shows. Some formats share headers (e.g. DOCX and EPUB are both ZIP). HexScan resolves these with secondary signature checks at known offsets.</p>
+          <h3>Limitaciones conocidas</h3>
+          <p>Los magic bytes identifican el <em>contenedor del formato</em>, no el contenido. Un JPEG es un JPEG sin importar qué muestre la foto. Algunos formatos comparten cabeceras — DOCX, XLSX, PPTX, JAR, APK y ODF son todos ZIPs por dentro. HexScan encuentra la coincidencia más específica posible; la descripción indica cómo distinguirlos.</p>
         </div>
         <div class="about-block">
-          <h3>Deploy to GitHub Pages</h3>
-          <p>Push the three files (<code>index.html</code>, <code>style.css</code>, <code>signatures.js</code>) to a repository and enable GitHub Pages from Settings → Pages → Deploy from branch. No build step required.</p>
+          <h3>Agrega tus propias firmas</h3>
+          <p>Cada firma vive en <code>signatures.js</code> como un objeto simple: <code>{ name, ext, category, magic, offset, desc, mime }</code>. Los wildcards son <code>null</code> en el array de magic bytes. Agrega una entrada al final y el analizador la detecta de inmediato — sin compilar, sin frameworks, sin pasos de build.</p>
         </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <span>HexScan — static, local, open.</span>
-    <span>Built with ♥ for analysts, investigators &amp; curious minds.</span>
+    <div class="footer-top">
+      <span>HexScan — estático, local y de código abierto.</span>
+      <span>Hecho con ♥ para analistas, investigadores, jugadores de CTF &amp; mentes curiosas.</span>
+    </div>
+    <div class="footer-credit">
+      <a href="https://github.com/xfraylin" target="_blank" rel="noopener" class="credit-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span>Creado por <strong>xFraylin</strong></span>
+      </a>
+    </div>
   </footer>
 
   <script src="signatures.js"></script>
