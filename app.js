@@ -125,6 +125,78 @@
     if (container) { container.innerHTML = ''; buildHexGrid(); }
   });
 
+  // ── ZIP sub-format refinement ─────────────────────────────────
+  const ZIP_PK = [0x50, 0x4B, 0x03, 0x04];
+
+  function refineZipFormat(bytes) {
+    // Filenames inside ZIP local-file headers are stored uncompressed,
+    // so we can scan raw bytes for recognizable path strings.
+    let ascii = '';
+    for (let i = 0; i < bytes.length; i++) ascii += String.fromCharCode(bytes[i]);
+
+    // ODF formats — mimetype stored uncompressed at byte 38
+    if (ascii.includes('vnd.oasis.opendocument.text'))
+      return { name: 'ODT — Writer (OpenDocument)', ext: '.odt', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Documento de texto OpenDocument. Formato nativo de LibreOffice Writer. ZIP con archivos XML adentro — el contenido está en content.xml.',
+        mime: 'application/vnd.oasis.opendocument.text' };
+    if (ascii.includes('vnd.oasis.opendocument.spreadsheet'))
+      return { name: 'ODS — Calc (OpenDocument)', ext: '.ods', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Hoja de cálculo OpenDocument. Formato nativo de LibreOffice Calc. Los datos de las celdas están en content.xml dentro del ZIP.',
+        mime: 'application/vnd.oasis.opendocument.spreadsheet' };
+    if (ascii.includes('vnd.oasis.opendocument.presentation'))
+      return { name: 'ODP — Impress (OpenDocument)', ext: '.odp', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Presentación OpenDocument. Formato nativo de LibreOffice Impress. Cada diapositiva está en content.xml dentro del ZIP.',
+        mime: 'application/vnd.oasis.opendocument.presentation' };
+
+    // Office Open XML — scan for internal path fragments in filenames
+    if (ascii.includes('word/document') || ascii.includes('word/_rels') || ascii.includes('word/settings') || ascii.includes('word/styles'))
+      return { name: 'DOCX — Word (Office Open XML)', ext: '.docx', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Documento Word en formato Office Open XML. Internamente es un ZIP — renómbralo a .zip y ábrelo para explorar los XML. El texto principal vive en word/document.xml.',
+        mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+    if (ascii.includes('xl/workbook') || ascii.includes('xl/sharedStrings') || ascii.includes('xl/styles') || ascii.includes('xl/_rels'))
+      return { name: 'XLSX — Excel (Office Open XML)', ext: '.xlsx', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Hoja de cálculo Excel en formato Office Open XML. ZIP con XML adentro — los datos están en xl/sharedStrings.xml y xl/worksheets/. Renómbralo a .zip para explorarlo.',
+        mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+    if (ascii.includes('ppt/presentation') || ascii.includes('ppt/slides') || ascii.includes('ppt/_rels'))
+      return { name: 'PPTX — PowerPoint (Office Open XML)', ext: '.pptx', category: 'documents', magic: ZIP_PK, offset: 0,
+        desc: 'Presentación PowerPoint en formato Office Open XML. Cada diapositiva vive en ppt/slides/slideN.xml. Renómbralo a .zip y ábrelo para ver la estructura completa.',
+        mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' };
+
+    // Android APK — check before JAR (APK also has META-INF)
+    if (ascii.includes('AndroidManifest.xml'))
+      return { name: 'APK — Android Package', ext: '.apk', category: 'executables', magic: ZIP_PK, offset: 0,
+        desc: 'Paquete de aplicación Android. ZIP con bytecode DEX (classes.dex), recursos compilados, y AndroidManifest.xml con permisos y actividades.',
+        mime: 'application/vnd.android.package-archive' };
+
+    // Java Archive
+    if (ascii.includes('META-INF/MANIFEST.MF') || (ascii.includes('META-INF/') && ascii.includes('.class')))
+      return { name: 'JAR — Java Archive', ext: '.jar', category: 'executables', magic: ZIP_PK, offset: 0,
+        desc: 'Java Archive. ZIP con clases .class compiladas y un manifiesto en META-INF/MANIFEST.MF. Ejecutable con "java -jar" si el manifiesto declara Main-Class.',
+        mime: 'application/java-archive' };
+
+    return null;
+  }
+
+  // ── Plain text fallback ───────────────────────────────────────
+  function detectPlainText(bytes) {
+    const sample = bytes.slice(0, Math.min(bytes.length, 512));
+    if (sample.length === 0) return null;
+    let printable = 0;
+    for (const b of sample) {
+      if ((b >= 0x20 && b <= 0x7E) || b === 0x09 || b === 0x0A || b === 0x0D) printable++;
+    }
+    if (printable / sample.length < 0.80) return null;
+    return {
+      name: 'Texto plano',
+      ext: '.txt, .csv, .log, .md, .ini, .conf',
+      category: 'text',
+      magic: [],
+      offset: 0,
+      desc: 'Archivo de texto plano sin firma de bytes. Detectado porque más del 80% del contenido son caracteres ASCII imprimibles. No existe magic number — la extensión es la única forma de identificar el subtipo.',
+      mime: 'text/plain'
+    };
+  }
+
   // ── Signature matching ────────────────────────────────────────
   function matchSignature(bytes) {
     let best = null;
@@ -195,17 +267,28 @@
     resultDesc.textContent = sig.desc;
 
     // Meta chips
+    const sigLen = magic.length;
     resultMeta.innerHTML = [
       `<div class="result-meta-item"><span>MIME</span><strong>${sig.mime || '—'}</strong></div>`,
-      `<div class="result-meta-item"><span>Offset</span><strong>${offset} byte${offset !== 1 ? 's' : ''}</strong></div>`,
-      `<div class="result-meta-item"><span>Signature length</span><strong>${magic.length} byte${magic.length !== 1 ? 's' : ''}</strong></div>`,
+      sigLen > 0
+        ? `<div class="result-meta-item"><span>Offset</span><strong>${offset} byte${offset !== 1 ? 's' : ''}</strong></div>`
+        : '',
+      sigLen > 0
+        ? `<div class="result-meta-item"><span>Longitud firma</span><strong>${sigLen} byte${sigLen !== 1 ? 's' : ''}</strong></div>`
+        : `<div class="result-meta-item"><span>Detección</span><strong>contenido ASCII</strong></div>`,
     ].join('');
 
-    // Matched hex
-    const matchedHex = magic
-      .map((b, i) => b === null ? '??' : (rawBytes[offset + i] || 0).toString(16).padStart(2, '0').toUpperCase())
-      .join(' ');
-    resultMatchedHex.textContent = matchedHex;
+    // Matched hex (hidden for plain text which has no magic bytes)
+    const hexDisplay = resultMatchedHex.closest('.result-hex-display');
+    if (sigLen > 0) {
+      const matchedHex = magic
+        .map((b, i) => b === null ? '??' : (rawBytes[offset + i] || 0).toString(16).padStart(2, '0').toUpperCase())
+        .join(' ');
+      resultMatchedHex.textContent = matchedHex;
+      if (hexDisplay) hexDisplay.hidden = false;
+    } else {
+      if (hexDisplay) hexDisplay.hidden = true;
+    }
 
     // Hex dump with highlights
     hexDump.innerHTML = '';
@@ -214,8 +297,7 @@
       const span = document.createElement('span');
       span.className = 'hex-byte';
       span.textContent = rawBytes[i].toString(16).padStart(2, '0').toUpperCase();
-      // Highlight matched range
-      if (i >= offset && i < offset + magic.length && magic[i - offset] !== null) {
+      if (sigLen > 0 && i >= offset && i < offset + magic.length && magic[i - offset] !== null) {
         span.classList.add('matched');
       }
       hexDump.appendChild(span);
@@ -231,13 +313,21 @@
   // ── Analyze bytes ─────────────────────────────────────────────
   function analyze(bytes) {
     if (!bytes || bytes.length === 0) return;
-    const sig = matchSignature(bytes);
+
+    let sig = matchSignature(bytes);
+
+    // Refine ZIP-based formats by scanning internal filenames
+    if (sig && sig.name === 'ZIP') sig = refineZipFormat(bytes) || sig;
+
+    // Plain text fallback when no magic bytes match
+    if (!sig) sig = detectPlainText(bytes);
+
     if (sig) {
       showResult(sig, bytes);
     } else {
       showNoMatch(bytes);
     }
-    // Scroll to result
+
     setTimeout(() => {
       resultSection.hidden ? noMatchSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
                            : resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -251,7 +341,7 @@
       const bytes = new Uint8Array(e.target.result);
       analyze(bytes);
     };
-    reader.readAsArrayBuffer(file.slice(0, 512)); // Read first 512 bytes
+    reader.readAsArrayBuffer(file.slice(0, 4096));
   }
 
   // ── Drop zone events ──────────────────────────────────────────
@@ -303,7 +393,7 @@
   function buildCatFilters() {
     const all = document.createElement('button');
     all.className = 'cat-btn active';
-    all.textContent = 'All';
+    all.textContent = 'Todos';
     all.dataset.cat = '';
     catFilters.appendChild(all);
 
@@ -366,7 +456,7 @@
       countEl.className = 'sig-count';
       document.querySelector('.sig-table-wrap').after(countEl);
     }
-    countEl.textContent = `Showing ${rows.length} of ${SIGS.length} signatures`;
+    countEl.textContent = `Mostrando ${rows.length} de ${SIGS.length} firmas`;
   }
 
   sigSearch.addEventListener('input', () => {
